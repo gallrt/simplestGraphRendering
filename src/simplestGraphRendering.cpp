@@ -2028,8 +2028,19 @@ struct TriangleGraph
 
 struct CollisionSpheres
 {
-	CollisionSpheres()
-		: ss_mesh(6), cs_mesh(3), data_texture_handle(0), priority_texture_handle(0), grow_factor(0.0), highest_priority(0), show_eliminations_factor(0.0f), current_timestep(0)
+	CollisionSpheres() : 
+		sphere_cnt(0),
+		grow_factor(0.0),
+		highest_priority(0),
+		show_eliminations_factor(0.0),
+		current_timestep(0),
+		time(0.0),
+		ss_prgm_handle(0),
+		cs_prgm_handle(0),
+		data_texture_handle(0),
+		priority_texture_handle(0),
+		ss_mesh(6),
+		cs_mesh(3)
 	{
 		// Create shader progams
 		ss_prgm_handle = createShaderProgram("../src/surface_sphere_v.glsl","../src/surface_sphere_f.glsl",{"v_position"});
