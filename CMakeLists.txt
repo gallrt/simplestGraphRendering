@@ -14,14 +14,16 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(simplestGraphRendering CXX C)
 
-find_package(PkgConfig REQUIRED)
-pkg_search_module(GLFW REQUIRED glfw3)
-include_directories(${GLFW_INCLUDE_DIRS})
+#find_package(PkgConfig REQUIRED)
+#pkg_search_module(GLFW REQUIRED glfw3)
+#include_directories()
 
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
 find_package(GLEW REQUIRED)
 include_directories(${GLEW_INCLUDE_DIRS})
+
+set(GLFW_LIBRARIES "-lglfw")
 
 enable_testing()
 
