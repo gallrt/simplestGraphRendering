@@ -15,7 +15,7 @@ To build:
 
 To run (in build):
 
-    ./simple -gf demo/demo_graph_1.gl
+    ./simple -gf ../demo/demo_graph_1.gl
 
 Graph file format: GL
 
