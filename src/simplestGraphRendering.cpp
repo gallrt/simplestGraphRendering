@@ -649,8 +649,8 @@ namespace ResourceLoader
         }
 
         /*
-         *	If the information we were looking for was inside the first line, we are done here.
-         *	Note the position where we left off and exit with return true after closing the file.
+         * If the information we were looking for was inside the first line, we are done here.
+         * Note the position where we left off and exit with return true after closing the file.
          */
         if (firstline)
         {
@@ -660,8 +660,8 @@ namespace ResourceLoader
         }
 
         /*
-         *	If the information wasn't inside the first line we have to keep reading lines.
-         *	Skip all comment lines (first character = '#').
+         * If the information wasn't inside the first line we have to keep reading lines.
+         * Skip all comment lines (first character = '#').
          */
         std::getline(file, buffer, '\n');
         while (buffer[0] == '#' || (buffer.size() < 1))
@@ -670,7 +670,7 @@ namespace ResourceLoader
         }
 
         /*
-         *	Now we should have a string containing the image dimensions and can extract them.
+         * Now we should have a string containing the image dimensions and can extract them.
          */
         itr1 = buffer.begin();
         for (itr2 = buffer.begin(); itr2 != buffer.end(); itr2++)
@@ -1177,12 +1177,12 @@ struct OrbitalCamera
                 right_intersection_lon = -180.0f - right_intersection_lon;
         }
 
-        bbox.min_longitude = longitude - abs(right_intersection_lon - longitude);
+        bbox.min_longitude = longitude - std::abs(right_intersection_lon - longitude);
         bbox.min_longitude = (bbox.min_longitude < -180.0f) ? 360.0f + bbox.min_longitude : bbox.min_longitude;
 
         bbox.max_longitude = right_intersection_lon;
 
-        bbox.min_latitude = latitude - abs(upper_intersection_lat - latitude);
+        bbox.min_latitude = latitude - std::abs(upper_intersection_lat - latitude);
         bbox.max_latitude = upper_intersection_lat;
 
         return bbox;
@@ -2202,12 +2202,12 @@ struct CollisionSpheres
             uint q_idx = search->second;
             assert(q_idx < spheres.size());
 
-            Math::Vec3 p = geoToCartesian(spheres[i].lon, spheres[i].lat);
-            Math::Vec3 q = geoToCartesian(spheres[q_idx].lon, spheres[q_idx].lat);
+            // Math::Vec3 p = geoToCartesian(spheres[i].lon, spheres[i].lat);
+            // Math::Vec3 q = geoToCartesian(spheres[q_idx].lon, spheres[q_idx].lat);
             double rp = spheres[i].radius;
             double rq = spheres[q_idx].radius;
 
-            // float d = (p-q).length();
+            // float d = (p - q).length();
             double d = haversine(spheres[i], spheres[q_idx]);
 
             double bl = d * (rp / (rp + rq));
@@ -2475,10 +2475,10 @@ struct TextLabels
             float *data = new float[label_text.length() * 2];
             // for (size_t i = 0; i < label_text.length(); i++)
             // {
-            // 	std::cout << "Char: " << label_text[i] << " Code: " << (uint)label_text[i]
-            //        << " u: " << u[(int)label_text[i]] << " v: " << v[(int)label_text[i]] << std::endl;
-            // 	data[i * 2] = u[label_text[i]];
-            // 	data[i * 2 + 1] = v[label_text[i]];
+            //     std::cout << "Char: " << label_text[i] << " Code: " << (uint)label_text[i]
+            //               << " u: " << u[(int)label_text[i]] << " v: " << v[(int)label_text[i]] << std::endl;
+            //     data[i * 2] = u[label_text[i]];
+            //     data[i * 2 + 1] = v[label_text[i]];
             // }
 
             std::vector<uint16_t> u16_label_text = toUnicodePoints(label_text);
@@ -3100,7 +3100,7 @@ namespace Controls
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         {
             // if (active_collisionSpheres != nullptr)
-            // 	active_collisionSpheres->moveTimestep(1 - 2 * std::signbit(y_offset));
+            //     active_collisionSpheres->moveTimestep(1 - 2 * std::signbit(y_offset));
             // active_collisionSpheres->moveTimestep(int((active_collisionSpheres->sphere_cnt) * 0.01) * (1 - 2 * std::signbit(y_offset)));
 
             if (active_collisionSpheres != nullptr)
@@ -3201,15 +3201,22 @@ namespace Controls
 void help(std::ostream &out)
 {
     out << "simple OPTIONS:\n"
-           "\t-gf <graph.gl|graph.sg>\tfile suffix selects the type of the graph\n"
-           "\t-f format\tformat=[sg, gl, raw] overrides file suffix\n"
-           "\t-t float\ttriangle transparency\n"
-           "\t-x float\tshow elimination factor\n"
-           "\t-bg float float float float\tset the background color\n"
-           "\t-opengl3\tuse opengl 3 instead of 4\n"
-           "\t--debug\tenable some debugging output\n"
-           "\t--no-bg-sphere\tdisable the background sphere\n"
-           "\t--no-angle-labels\tdisable angle labels\n"
+           "\t-gf <graph.gl|graph.sg>\n"
+           "\t\t\t   file suffix selects the type of the graph\n"
+           "\t-f format\t  format=[sg, gl, raw] overrides file suffix\n"
+           "\t-t float\t  triangle transparency\n"
+           "\t-x float\t  show elimination factor\n"
+           "\t-bg float float float float\n"
+           "\t\t\t   set the background color\n"
+           "\t-opengl3\t  use opengl 3 instead of 4\n"
+           "\t--debug\t\t  enable some debugging output\n"
+           "\t--no-bg-sphere\t  disable the background sphere\n"
+           "\t--no-angle-labels\n"
+           "\t\t\t   disable angle labels\n"
+           "\t--config string\t  determine the initial position of the OrbitalCamera\n"
+           "\t\t\t   string format: lat-long-orbit\n"
+           "\t\t\t   may be changed later by right-click drag-and-drop"
+           "\n"
         << std::flush;
 }
 
@@ -3236,6 +3243,8 @@ int main(int argc, char *argv[])
     bool angleLabels = true;
     GraphFileFormat gff = GFF_INVALID;
 
+    /* Create a orbital camera */
+    OrbitalCamera configCamera;
     int glMajorVersion = 4;
 
     int i = 1;
@@ -3352,6 +3361,18 @@ int main(int argc, char *argv[])
             i++;
             angleLabels = false;
         }
+        else if (argv[i] == std::string("--config"))
+        {
+            i += 2;
+            std::string s(argv[i + 1]);
+            std::replace(s.begin(), s.end(), '-', ' ');
+            std::stringstream values(s);
+
+            /* Use the already created orbital camera */
+            values >> configCamera.latitude >>
+                configCamera.longitude >>
+                configCamera.orbit;
+        }
         else
         {
             i++;
@@ -3394,7 +3415,7 @@ int main(int argc, char *argv[])
                   << "That ever I was born to set it right!\n"
                   << "-----\n"
                   << "Error: " << glewGetErrorString(error);
-        return false;
+        return 42;
     }
     /* Apparently glewInit() causes a GL ERROR 1280, so let's just catch that... */
     glGetError();
@@ -3452,7 +3473,7 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////
 
     /*
-     * OpenGL Objects are usaully represented by handles.
+     * OpenGL Objects are usually represented by handles.
      * From my understanding, these are basically pointers/adresses to something
      * the GPU (or GPU driver) owns.
      *
@@ -3494,9 +3515,9 @@ int main(int argc, char *argv[])
 
         /* Create a orbital camera */
         OrbitalCamera camera;
-        camera.longitude = 0.0f;
-        camera.latitude = 0.0f;
-        camera.orbit = 5.0f;
+        camera.longitude = configCamera.longitude;
+        camera.latitude = configCamera.latitude;
+        camera.orbit = configCamera.orbit;
         camera.near = 0.0001f;
         camera.far = 10.0f;
         camera.fovy = 30.0f * PI / 180.0f;
