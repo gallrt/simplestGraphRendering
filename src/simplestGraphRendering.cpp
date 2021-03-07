@@ -3202,20 +3202,22 @@ void help(std::ostream &out)
 {
     out << "simple OPTIONS:\n"
            "\t-gf <graph.gl|graph.sg>\n"
-           "\t\t\t   file suffix selects the type of the graph\n"
+           "\t\t\t  file suffix selects the type of the graph\n"
            "\t-f format\t  format=[sg, gl, raw] overrides file suffix\n"
            "\t-t float\t  triangle transparency\n"
            "\t-x float\t  show elimination factor\n"
            "\t-bg float float float float\n"
-           "\t\t\t   set the background color\n"
+           "\t\t\t  set the background color\n"
            "\t-opengl3\t  use opengl 3 instead of 4\n"
            "\t--debug\t\t  enable some debugging output\n"
            "\t--no-bg-sphere\t  disable the background sphere\n"
            "\t--no-angle-labels\n"
-           "\t\t\t   disable angle labels\n"
-           "\t--config string\t  determine the initial position of the OrbitalCamera\n"
-           "\t\t\t   string format: lat-long-orbit\n"
-           "\t\t\t   may be changed later by right-click drag-and-drop"
+           "\t\t\t  disable angle labels\n"
+           "\t--config lat_long_orbit\n"
+           "\t\t\t  determines the initial position of the OrbitalCamera\n"
+           "\t\t\t  where lat and long describe the center of the image\n"
+           "\t\t\t  and orbit is the zoom: 0 = max zoom-in and 3 = whole earth.\n"
+           "\t\t\t  May be changed later by zooming and right-click drag-and-drop\n"
            "\n"
         << std::flush;
 }
@@ -3228,7 +3230,7 @@ typedef enum
     GFF_RAW
 } GraphFileFormat;
 
-int main(int argc, char *argv[])
+int main(const int argc, char *argv[])
 {
     /////////////////////////////////////
     // overly simple command line parsing
@@ -3272,27 +3274,31 @@ int main(int argc, char *argv[])
         else if (argv[i] == (std::string) "-f")
         {
             i++;
-            if (i > argc)
+            if (i < argc)
             {
-                std::cerr << "Missing parameter for -f" << std::endl;
-                return -1;
-            }
-            std::string token(argv[i]);
-            if (token == "sg")
-            {
-                gff = GFF_SG;
-            }
-            else if (token == "gl")
-            {
-                gff = GFF_GL;
-            }
-            else if (token == "raw")
-            {
-                gff = GFF_RAW;
+                std::string token(argv[i]);
+                i++;
+                if (token == "sg")
+                {
+                    gff = GFF_SG;
+                }
+                else if (token == "gl")
+                {
+                    gff = GFF_GL;
+                }
+                else if (token == "raw")
+                {
+                    gff = GFF_RAW;
+                }
+                else
+                {
+                    std::cerr << "Unkown graph file format: " << token << std::endl;
+                    return -1;
+                }
             }
             else
             {
-                std::cerr << "Unkown graph file format: " << token << std::endl;
+                std::cerr << "Missing parameter for -f" << std::endl;
                 return -1;
             }
         }
@@ -3327,7 +3333,7 @@ int main(int argc, char *argv[])
         else if (argv[i] == (std::string) "-bg")
         {
             ++i;
-            if (i + 4 <= argc)
+            if (i + 3 < argc)
             {
                 bgColor[0] = std::stof(argv[i]);
                 bgColor[1] = std::stof(argv[i + 1]);
@@ -3363,18 +3369,28 @@ int main(int argc, char *argv[])
         }
         else if (argv[i] == std::string("--config"))
         {
-            i += 2;
-            std::string s(argv[i + 1]);
-            std::replace(s.begin(), s.end(), '-', ' ');
-            std::stringstream values(s);
+            i++;
+            if (i < argc)
+            {
+                std::string s(argv[i]);
+                i++;
+                std::replace(s.begin(), s.end(), '_', ' ');
+                std::stringstream values(s);
 
-            /* Use the already created orbital camera */
-            values >> configCamera.latitude >>
-                configCamera.longitude >>
-                configCamera.orbit;
+                /* Use the already created orbital camera */
+                values >> configCamera.latitude >>
+                    configCamera.longitude >>
+                    configCamera.orbit;
+            }
+            else
+            {
+                std::cerr << "Missing parameter for --config" << std::endl;
+                return -1;
+            }
         }
         else
         {
+            std::cerr << "Unknown option: " << argv[i] << std::endl;
             i++;
         }
     }
@@ -3395,7 +3411,8 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_SAMPLES, 4);
-    window = glfwCreateWindow(1600, 900, "Simple Graph Renderer", NULL, NULL);
+    std::string title = "Simplest Graph Renderer on Graph \"" + filepath + "\"";
+    window = glfwCreateWindow(1600, 900, title.c_str(), NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -3441,16 +3458,20 @@ int main(int argc, char *argv[])
     std::vector<CollisionSphere> cSpheres;
     std::map<uint, uint> idMap;
 
-    /* Decide which graph format to load */
-    std::size_t filepath_length = filepath.length();
-    std::string file_format(filepath.substr(filepath_length - 2, 2));
+    /* Check whether graph format has not been set yet */
+    if (gff == GFF_INVALID)
+    {
+        /* Decide which graph format to load */
+        std::size_t filepath_length = filepath.length();
+        std::string file_format(filepath.substr(filepath_length - 2, 2));
 
-    if (file_format == "gl")
-        gff = GFF_GL;
-    else if (file_format == "sg")
-        gff = GFF_SG;
-    else if (file_format == "aw")
-        gff = GFF_RAW;
+        if (file_format == "gl")
+            gff = GFF_GL;
+        else if (file_format == "sg")
+            gff = GFF_SG;
+        else if (file_format == "aw")
+            gff = GFF_RAW;
+    }
 
     switch (gff)
     {
@@ -3515,13 +3536,15 @@ int main(int argc, char *argv[])
 
         /* Create a orbital camera */
         OrbitalCamera camera;
-        camera.longitude = configCamera.longitude;
-        camera.latitude = configCamera.latitude;
-        camera.orbit = configCamera.orbit;
+        camera.longitude = 0.0f;
+        camera.latitude = 0.0f;
+        camera.orbit = 1.0f;
         camera.near = 0.0001f;
         camera.far = 10.0f;
         camera.fovy = 30.0f * PI / 180.0f;
         camera.aspect_ratio = 16.0f / 9.0f;
+
+        camera.moveInOrbit(configCamera.latitude, configCamera.longitude, configCamera.orbit);
 
         /* Make camera accessable in window callbacks */
         glfwSetWindowUserPointer(window, &camera);
