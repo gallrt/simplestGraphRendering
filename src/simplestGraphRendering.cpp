@@ -3412,7 +3412,7 @@ int main(const int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_SAMPLES, 4);
     std::string title = "Simplest Graph Renderer on Graph \"" + filepath + "\"";
-    window = glfwCreateWindow(1600, 900, title.c_str(), NULL, NULL);
+    window = glfwCreateWindow(1920, 1080, title.c_str(), NULL, NULL);
     if (!window)
     {
         glfwTerminate();
